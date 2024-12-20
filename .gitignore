@@ -2,3 +2,5 @@
 .DS_Store
 backup
 chroma
+ai-agent
+__pycache__
