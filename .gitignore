@@ -4,3 +4,4 @@ backup
 chroma
 ai-agent
 __pycache__
+.env
