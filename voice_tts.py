@@ -1,23 +1,16 @@
-import os
-import time
-import pygame
+import sounddevice as sd
+import soundfile as sf
 from gtts import gTTS
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 def play_text_to_speech(text, language='en', slow=False):
     tts = gTTS(text=text, lang=language, slow=slow)
-    
-    temp_audio_file = "temp_audio.mp3"
+    temp_audio_file = "temp_audio.wav"
     tts.save(temp_audio_file)
     
-    pygame.mixer.init()
-    pygame.mixer.music.load(temp_audio_file)
-    pygame.mixer.music.play()
-
-    while pygame.mixer.music.get_busy():
-        pygame.time.Clock().tick(10)
-
-    pygame.mixer.music.stop()
-    pygame.mixer.quit()
-
-    time.sleep(3)
+    data, samplerate = sf.read(temp_audio_file)
+    sd.play(data, samplerate)
+    sd.wait()  # Wait until playback is finished
     os.remove(temp_audio_file)

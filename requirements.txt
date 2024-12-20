@@ -9,3 +9,4 @@ langchain-chroma
 pygame
 gtts
 faster_whisper
+pyht
