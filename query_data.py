@@ -1,3 +1,4 @@
+import threading
 import argparse
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
@@ -16,7 +17,7 @@ DEFAULT_CHUNK_LENGTH = 10
 CHROMA_PATH = "chroma"
 
 PROMPT_TEMPLATE = """
-You are James a professional AI Assistant
+You are Jaymie a professional AI Assistant
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
 Answer the question based only on the following context:
 {context}
@@ -61,7 +62,7 @@ def record_audio_chunk(audio, stream, chunk_length=DEFAULT_CHUNK_LENGTH):
         return False
     
 def transcribe_audio(model, file_path):
-    segments, info = model.transcribe(file_path, beam_size=7)
+    segments, info = model.transcribe(file_path, beam_size=5)
     transcription = ' '.join(segment.text for segment in segments)
     return transcription
 
@@ -71,14 +72,16 @@ def main():
     
     audio = pyaudio.PyAudio()
     stream = audio.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=1024)
-    customer_input_transcription = ""
-    
-    try:
+    conversation_history = []
+
+    def ai_speak(text):
+        vtts.play_text_to_speech(text)
+
+    def listen_for_customer():
         while True:
+            customer_input_transcription = ""
             chunk_file = "temp_audio_chunk.wav"
-            conversation_history = []
             # Record audio chunk
-            print("_")
             if not record_audio_chunk(audio, stream):
                 # Transcribe audio
                 transcription = transcribe_audio(model, chunk_file)
@@ -92,9 +95,20 @@ def main():
                 output = query_rag(transcription, conversation_history)
                 if output:
                     output = output.lstrip()
-                    vtts.play_text_to_speech(output)
+                    ai_speak(output)
                     print("AI Assistant:{}".format(output))
-    
+
+    # Start listening for customer input in a separate thread
+    listener_thread = threading.Thread(target=listen_for_customer)
+    listener_thread.start()
+
+    # AI speaks first
+    initial_prompt = "Welcome to Galaxy Design, a boutique web design agency based in Sydney, Australia. Our passion for creativity drives us to deliver exceptional web design, branding, and marketing solutions tailored for small businesses across Australia."
+    ai_speak(initial_prompt)
+    print("AI Assistant:{}".format(initial_prompt))
+
+    try:
+        listener_thread.join()
     except KeyboardInterrupt:
         print("\nStopping...")
 
